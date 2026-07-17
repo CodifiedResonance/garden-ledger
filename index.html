@@ -1,0 +1,451 @@
+<!doctype html>
+<!-- The Garden Ledger — a field naturalist's companion. Ported build: runs anywhere over HTTPS with your own Anthropic API key. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Garden Ledger</title>
+<meta name="theme-color" content="#182A20" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;700&display=swap');
+  :root {
+    --spruce:#22382B; --spruce-deep:#182A20; --paper:#EDEFE3; --paper-card:#F5F6EC;
+    --lichen:#8FA98B; --marigold:#D9A13B; --robin:#B8502E; --ink-faint:#5B6B5B;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; }
+  .gl-root { min-height:100vh; background:var(--paper); color:var(--spruce); font-family:'Karla',sans-serif; }
+  .gl-wrap { max-width:660px; margin:0 auto; padding:0 16px 80px; }
+  .gl-display { font-family:'Fraunces',serif; }
+  .gl-header { background:var(--spruce-deep); color:var(--paper); padding:26px 16px 22px; }
+  .gl-header-in { max-width:660px; margin:0 auto; }
+  .gl-eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--lichen); margin:0 0 6px; }
+  .gl-title { font-size:30px; font-weight:600; margin:0; line-height:1.1; }
+  .gl-sub { margin:8px 0 0; font-size:13.5px; color:#C9D4C4; }
+  .gl-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .gl-btn { border:1.5px solid var(--spruce); background:var(--paper-card); color:var(--spruce);
+    font-family:'Karla'; font-weight:700; font-size:14px; padding:11px 14px; border-radius:3px;
+    cursor:pointer; flex:1 1 auto; min-width:120px; }
+  .gl-btn:focus-visible { outline:3px solid var(--marigold); outline-offset:2px; }
+  .gl-btn.primary { background:var(--marigold); border-color:var(--marigold); color:var(--spruce-deep); }
+  .gl-btn.quiet { background:transparent; border-color:var(--lichen); color:var(--paper); }
+  .gl-btn:disabled { opacity:.5; cursor:default; }
+  .gl-card { background:var(--paper-card); border:2px solid var(--spruce); border-radius:4px;
+    padding:16px 16px 14px; margin-top:16px; position:relative; }
+  .gl-stamp { position:absolute; top:-11px; right:12px; transform:rotate(2deg);
+    font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    padding:3px 9px; border-radius:2px; color:var(--spruce-deep); }
+  .gl-date { font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
+  .gl-entry-title { font-size:21px; font-weight:700; margin:3px 0 2px; }
+  .gl-usernote { font-size:12.5px; font-style:italic; color:var(--ink-faint); margin:0 0 8px; }
+  .gl-rule { border:none; border-top:1px dotted var(--lichen); margin:10px 0; }
+  .gl-body { font-size:15px; line-height:1.55; margin:0; }
+  .gl-sec { margin-top:10px; }
+  .gl-sec-label { font-size:10.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--robin); margin:0 0 2px; }
+  .gl-sec p { margin:0; font-size:14px; line-height:1.5; }
+  .gl-del { position:absolute; bottom:8px; right:10px; background:none; border:none; color:var(--ink-faint);
+    font-size:11px; cursor:pointer; font-family:'Karla'; }
+  .gl-input, .gl-textarea { width:100%; border:1.5px solid var(--spruce); border-radius:3px; background:#FFF;
+    padding:11px 12px; font-family:'Karla'; font-size:15px; color:var(--spruce); }
+  .gl-textarea { min-height:76px; resize:vertical; }
+  .gl-label { display:block; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin:12px 0 5px; }
+  .gl-error { background:#F6E3DC; border:1.5px solid var(--robin); color:var(--robin);
+    padding:10px 12px; border-radius:3px; font-size:13.5px; margin-top:14px; }
+  .gl-busy { display:flex; align-items:center; gap:10px; margin-top:16px; font-size:14px; color:var(--ink-faint); }
+  .gl-dot { width:9px; height:9px; border-radius:50%; background:var(--marigold); animation:gl-pulse 1s infinite alternate; }
+  @keyframes gl-pulse { from{opacity:.3;} to{opacity:1;} }
+  @media (prefers-reduced-motion: reduce) { .gl-dot { animation:none; } }
+  .gl-empty { text-align:center; padding:44px 20px; color:var(--ink-faint); }
+  .gl-empty .gl-display { font-size:20px; color:var(--spruce); }
+  .gl-settings-link { background:none; border:none; color:var(--lichen); font-size:12px; cursor:pointer;
+    font-family:'Karla'; text-decoration:underline; padding:0; margin-top:10px; }
+  .gl-photo-name { font-size:13px; margin-top:6px; color:var(--ink-faint); }
+  .gl-hidden { display:none !important; }
+  .gl-preview { width:100%; max-height:240px; object-fit:cover; border-radius:3px; border:1.5px solid var(--spruce); margin-top:10px; display:block; }
+  .gl-thumb-wrap { margin:8px 0 2px; border-radius:3px; overflow:hidden; border:1.5px solid var(--spruce); }
+  .gl-thumb { display:block; width:100%; max-height:220px; object-fit:cover; cursor:zoom-in; }
+  .gl-thumb-expanded { max-height:none; object-fit:contain; cursor:zoom-out; background:var(--spruce-deep); }
+  .gl-thumb-hint { font-size:10.5px; color:var(--ink-faint); margin:3px 0 0; text-align:right; }
+  .gl-key-hint { font-size:12px; color:var(--ink-faint); margin:5px 0 0; line-height:1.45; }
+</style>
+</head>
+<body>
+<div class="gl-root">
+  <div class="gl-header"><div class="gl-header-in" id="gl-header-in"></div></div>
+  <div class="gl-wrap" id="gl-wrap"></div>
+</div>
+
+<script>
+/* ————— The Garden Ledger (ported) —————
+   Storage: the phone's own localStorage. Brain: your Anthropic API key,
+   entered once and kept on this device only — never in this file. */
+const STORE_KEY = "garden-ledger-v1";
+const KEY_KEY = "garden-ledger-api-key";
+const palette = {
+  spruce:"#22382B", spruceDeep:"#182A20", paper:"#EDEFE3", paperCard:"#F5F6EC",
+  lichen:"#8FA98B", marigold:"#D9A13B", robin:"#B8502E", inkFaint:"#5B6B5B",
+};
+const catMeta = {
+  plant:  { label:"Specimen",  color:palette.lichen },
+  animal: { label:"Sighting",  color:palette.marigold },
+  season: { label:"Field note",color:palette.robin },
+  space:  { label:"Plot",      color:palette.lichen },
+};
+
+/* ——— state ——— */
+let profile = null;
+let entries = [];
+let mode = null;          // 'photo' | 'sighting'
+let busy = false;
+let busyLine = "";
+let error = "";
+let showSettings = false;
+let photoFile = null;
+let photoPreviewUrl = null;
+let expandedThumbs = new Set();
+let apiKey = null;
+
+/* ——— helpers ——— */
+const esc = (s) => (s || "").replace(/[&<>"']/g, (c) =>
+  ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}); }
+  catch { return ""; }
+}
+function todayLong() {
+  return new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+
+function loadImageEl(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => resolve({ img, url });
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Couldn't read that image")); };
+    img.src = url;
+  });
+}
+
+function drawResized(img, maxDim) {
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+/* Two sizes from one photo: a sharper copy for Claude to read, and a lean
+   thumbnail that stays in the ledger permanently as visual memory. */
+async function prepareImage(file) {
+  const { img, url } = await loadImageEl(file);
+  const analysisDataUrl = drawResized(img, 1200).toDataURL("image/jpeg", 0.82);
+  const thumbDataUrl = drawResized(img, 640).toDataURL("image/jpeg", 0.6);
+  URL.revokeObjectURL(url);
+  return { analysisB64: analysisDataUrl.split(",")[1], thumbDataUrl };
+}
+
+function buildContext() {
+  const recent = entries.slice(0,14).map(e => `${fmtDate(e.date)} · ${e.category}: ${e.title}`).join("\n");
+  return `GARDEN CONTEXT
+Location: ${profile.location}
+Garden notes: ${profile.notes || "none given"}
+Today: ${todayLong()}
+Ledger so far (most recent first):
+${recent || "Nothing recorded yet — this is a fresh ledger."}`;
+}
+
+const VOICE = `You are a field naturalist companion for one specific garden. Never write like a fact sheet or encyclopedia. Write like a sharp, warm naturalist standing in the garden explaining behaviour: what this thing is *doing*, why it is doing it right now in this place and this week of the year, and what it is connected to. Be precise to the location and date given — local species, local season timing, local soil and weather patterns. Reference the ledger context when it's relevant (returning visitors, plants already identified, patterns forming).
+
+Respond ONLY with a JSON object, no markdown fences, no preamble:
+{
+  "title": "short specific name, e.g. 'Wood pigeon' or 'Hosta, slug-grazed'",
+  "category": "plant" | "animal" | "season" | "space",
+  "body": "2-4 sentences of behavioural insight — habits, what it's doing and why",
+  "whyNow": "1-2 sentences tying this to the exact date and location",
+  "nearby": "1-2 sentences: adjacent species likely present, or companion/knock-on effects in the garden",
+  "action": "one concrete thing to do or watch for in the next week or two"
+}`;
+
+async function askClaude(contentBlocks) {
+  if (!apiKey) { const err = new Error("no-key"); err.friendly = "No API key set yet — add it under \"Edit location, plot notes & key\"."; throw err; }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model:"claude-sonnet-4-6",
+      max_tokens:1000,
+      messages:[{ role:"user", content:contentBlocks }],
+    }),
+  });
+  if (res.status === 401 || res.status === 403) {
+    const err = new Error("bad-key");
+    err.friendly = "The API key was refused — check it under \"Edit location, plot notes & key\", or issue a fresh one in the Anthropic console.";
+    throw err;
+  }
+  if (res.status === 429) {
+    const err = new Error("rate");
+    err.friendly = "Too many requests in a short burst — give it a minute and try again.";
+    throw err;
+  }
+  const data = await res.json();
+  const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+  const clean = text.replace(/```json|```/g, "").trim();
+  const start = clean.indexOf("{"), end = clean.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("Unexpected reply shape");
+  return JSON.parse(clean.slice(start, end + 1));
+}
+
+/* ——— persistence (device-local) ——— */
+async function loadStore() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      profile = saved.profile || null;
+      entries = saved.entries || [];
+    }
+    apiKey = localStorage.getItem(KEY_KEY) || null;
+  } catch { /* fresh ledger */ }
+}
+async function persist() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ profile, entries }));
+    return;
+  } catch { /* likely near the size ceiling — try shedding old thumbnails, oldest first */ }
+
+  const trimmed = entries.map((e) => ({ ...e }));
+  for (let i = trimmed.length - 1; i >= 0; i--) {
+    if (!trimmed[i].thumbnail) continue;
+    delete trimmed[i].thumbnail;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ profile, entries: trimmed }));
+      entries = trimmed;
+      error = "The ledger was getting full, so the oldest photo thumbnails were cleared to make room — the notes themselves are untouched.";
+      return;
+    } catch { /* keep shedding */ }
+  }
+  error = "Couldn't save to the ledger — your entry is shown but may not persist.";
+}
+
+/* ——— actions ——— */
+async function saveProfile() {
+  const loc = document.getElementById("gl-loc").value.trim();
+  if (!loc) return;
+  const notes = document.getElementById("gl-notes").value.trim();
+  const keyField = document.getElementById("gl-key");
+  if (keyField) {
+    const k = keyField.value.trim();
+    if (k) { apiKey = k; try { localStorage.setItem(KEY_KEY, k); } catch {} }
+  }
+  profile = { location: loc, notes };
+  showSettings = false;
+  await persist();
+  render();
+}
+
+async function addEntry(result, extra = {}) {
+  const cat = catMeta[result.category] ? result.category : "season";
+  entries.unshift({
+    id: Date.now().toString(36),
+    date: new Date().toISOString(),
+    title: result.title, category: cat,
+    body: result.body, whyNow: result.whyNow,
+    nearby: result.nearby, action: result.action,
+    ...extra,
+  });
+  await persist();
+}
+
+async function submitSighting() {
+  const val = document.getElementById("gl-sighting").value.trim();
+  if (!val || busy) return;
+  busy = true; busyLine = "Consulting the ledger…"; error = ""; render();
+  try {
+    const result = await askClaude([{ type:"text",
+      text:`${VOICE}\n\n${buildContext()}\n\nSIGHTING REPORT from the gardener: "${val}"\n\nExplain its habits, why it's here now, and what tends to travel with it.` }]);
+    await addEntry(result, { userNote: val });
+    mode = null;
+  } catch (ex) { error = ex.friendly || "That didn't come back cleanly — try once more."; }
+  busy = false; render();
+}
+
+async function submitPhoto() {
+  if (!photoFile || busy) return;
+  const caption = document.getElementById("gl-caption").value.trim();
+  busy = true; busyLine = "Reading the photo…"; error = ""; render();
+  try {
+    const { analysisB64, thumbDataUrl } = await prepareImage(photoFile);
+    busyLine = "Consulting the ledger…"; render();
+    const result = await askClaude([
+      { type:"image", source:{ type:"base64", media_type:"image/jpeg", data:analysisB64 } },
+      { type:"text",
+        text:`${VOICE}\n\n${buildContext()}\n\nPHOTO from the garden${caption ? ` — gardener's note: "${caption}"` : ""}. Identify what matters in it (plant, pot, veg patch, whole area — whichever it is), read its condition, and explain what's happening and what to do.` },
+    ]);
+    await addEntry(result, { userNote: caption || "Photo", fromPhoto: true, thumbnail: thumbDataUrl });
+    photoFile = null; mode = null;
+    if (photoPreviewUrl) { URL.revokeObjectURL(photoPreviewUrl); photoPreviewUrl = null; }
+  } catch (ex) { error = ex.friendly || "Couldn't read that one — try a clearer shot or a smaller file."; }
+  busy = false; render();
+}
+
+async function seasonBriefing() {
+  if (busy) return;
+  busy = true; busyLine = "Checking the season…"; error = ""; render();
+  try {
+    const result = await askClaude([{ type:"text",
+      text:`${VOICE}\n\n${buildContext()}\n\nGive a "right now" field briefing for this garden: what's peaking, what's arriving or leaving (birds, insects, growth phases), and the one thing worth doing this week. Category: "season". Title it after the moment, not the date.` }]);
+    await addEntry(result);
+  } catch (ex) { error = ex.friendly || "The briefing didn't come through — try again."; }
+  busy = false; render();
+}
+
+async function removeEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  await persist();
+  render();
+}
+
+/* ——— view ——— */
+function render() {
+  const head = document.getElementById("gl-header-in");
+  const wrap = document.getElementById("gl-wrap");
+
+  if (!profile || showSettings) {
+    head.innerHTML = `
+      <p class="gl-eyebrow">The Garden Ledger</p>
+      <h1 class="gl-title gl-display">${profile ? "The ground" : "Set the ground"}</h1>
+      <p class="gl-sub">Everything is read against your exact place and the day's date — location is what makes the notes precise.</p>`;
+    wrap.innerHTML = `
+      <label class="gl-label" for="gl-loc">Where is the garden?</label>
+      <input id="gl-loc" class="gl-input" placeholder="e.g. Headingley, Leeds — or a postcode area" value="${esc(profile ? profile.location : "")}" />
+      <label class="gl-label" for="gl-notes">Anything about the plot (optional)</label>
+      <textarea id="gl-notes" class="gl-textarea" placeholder="North-facing, clay soil, small lawn, two raised beds, mature sycamore next door…">${esc(profile ? (profile.notes || "") : "")}</textarea>
+      <label class="gl-label" for="gl-key">Anthropic API key ${apiKey ? "(saved on this device — paste here only to replace it)" : ""}</label>
+      <input id="gl-key" class="gl-input" type="password" autocomplete="off" placeholder="${apiKey ? "••••••••  (leave blank to keep current key)" : "sk-ant-…"}" />
+      <p class="gl-key-hint">The key stays on this phone only — it is never stored in the app's files or sent anywhere except directly to Anthropic. Get one at console.anthropic.com. If it ever leaks, revoke it there in one click.</p>
+      <div class="gl-actions" style="margin-top:16px">
+        <button class="gl-btn primary" id="gl-save">Open the ledger</button>
+        ${profile ? `<button class="gl-btn" id="gl-cancel">Cancel</button>` : ""}
+      </div>`;
+    document.getElementById("gl-save").onclick = saveProfile;
+    if (profile) document.getElementById("gl-cancel").onclick = () => { showSettings = false; render(); };
+    return;
+  }
+
+  head.innerHTML = `
+    <p class="gl-eyebrow">The Garden Ledger</p>
+    <h1 class="gl-title gl-display">${esc(profile.location)}</h1>
+    <p class="gl-sub">${todayLong()} · ${entries.length} ${entries.length === 1 ? "entry" : "entries"} on record</p>
+    <div class="gl-actions">
+      <button class="gl-btn primary" id="gl-mode-photo">Add a photo</button>
+      <button class="gl-btn" style="background:${palette.paperCard}" id="gl-mode-sighting">Log a sighting</button>
+      <button class="gl-btn quiet" id="gl-season" ${busy ? "disabled" : ""}>What's happening now?</button>
+    </div>
+    <button class="gl-settings-link" id="gl-edit">Edit location, plot notes &amp; key</button>`;
+
+  let html = "";
+
+  if (mode === "photo") {
+    html += `
+      <div class="gl-card">
+        <span class="gl-stamp" style="background:${palette.lichen}">New specimen</span>
+        <label class="gl-label" for="gl-photo">Photo of a plant, pot, bed or whole area</label>
+        <input id="gl-photo" type="file" accept="image/*" />
+        <p class="gl-photo-name ${photoFile ? "" : "gl-hidden"}" id="gl-photo-name">${photoFile ? esc(photoFile.name) : ""}</p>
+        ${photoPreviewUrl ? `<img class="gl-preview" src="${photoPreviewUrl}" alt="Selected photo preview" />` : ""}
+        <label class="gl-label" for="gl-caption">A word of context (optional)</label>
+        <input id="gl-caption" class="gl-input" placeholder="e.g. back border, leaves yellowing since June" />
+        <div class="gl-actions" style="margin-top:14px">
+          <button class="gl-btn primary" id="gl-photo-go" ${(!photoFile || busy) ? "disabled" : ""}>Read the photo</button>
+        </div>
+      </div>`;
+  }
+
+  if (mode === "sighting") {
+    html += `
+      <div class="gl-card">
+        <span class="gl-stamp" style="background:${palette.marigold}">New sighting</span>
+        <label class="gl-label" for="gl-sighting">What did you see?</label>
+        <textarea id="gl-sighting" class="gl-textarea" placeholder="e.g. Two magpies pulling at the lawn around 7am. Or: a frog under the hosta."></textarea>
+        <div class="gl-actions" style="margin-top:14px">
+          <button class="gl-btn primary" id="gl-sighting-go" ${busy ? "disabled" : ""}>Explain it</button>
+        </div>
+      </div>`;
+  }
+
+  if (busy) html += `<div class="gl-busy" role="status"><span class="gl-dot"></span>${esc(busyLine)}</div>`;
+  if (error) html += `<div class="gl-error">${esc(error)}</div>`;
+
+  if (entries.length === 0 && !busy) {
+    html += `<div class="gl-empty">
+      <p class="gl-display">The ledger is blank.</p>
+      <p>Send a photo, log what you've seen, or ask what the season is doing right now. Every entry teaches it your garden.</p>
+    </div>`;
+  }
+
+  for (const e of entries) {
+    const meta = catMeta[e.category] || catMeta.season;
+    html += `
+      <article class="gl-card">
+        <span class="gl-stamp" style="background:${meta.color}">${meta.label}</span>
+        <p class="gl-date">${fmtDate(e.date)}</p>
+        <h2 class="gl-entry-title gl-display">${esc(e.title)}</h2>
+        ${e.userNote ? `<p class="gl-usernote">"${esc(e.userNote)}"</p>` : ""}
+        ${e.thumbnail ? `<div class="gl-thumb-wrap"><img class="gl-thumb ${expandedThumbs.has(e.id) ? "gl-thumb-expanded" : ""}" src="${e.thumbnail}" data-id="${e.id}" alt="${esc(e.title)}" /></div><p class="gl-thumb-hint">tap to ${expandedThumbs.has(e.id) ? "shrink" : "enlarge"}</p>` : ""}
+        <hr class="gl-rule" />
+        <p class="gl-body">${esc(e.body)}</p>
+        ${e.whyNow ? `<div class="gl-sec"><p class="gl-sec-label">Why now</p><p>${esc(e.whyNow)}</p></div>` : ""}
+        ${e.nearby ? `<div class="gl-sec"><p class="gl-sec-label">Likely nearby</p><p>${esc(e.nearby)}</p></div>` : ""}
+        ${e.action ? `<div class="gl-sec"><p class="gl-sec-label">This week</p><p>${esc(e.action)}</p></div>` : ""}
+        <button class="gl-del" data-id="${e.id}" aria-label="Remove ${esc(e.title)}">remove</button>
+        <div style="height:14px"></div>
+      </article>`;
+  }
+
+  wrap.innerHTML = html;
+
+  /* wire header */
+  document.getElementById("gl-mode-photo").onclick = () => { mode = (mode === "photo" ? null : "photo"); error = ""; render(); };
+  document.getElementById("gl-mode-sighting").onclick = () => { mode = (mode === "sighting" ? null : "sighting"); error = ""; render(); };
+  document.getElementById("gl-season").onclick = seasonBriefing;
+  document.getElementById("gl-edit").onclick = () => { showSettings = true; render(); };
+
+  /* wire body */
+  const pf = document.getElementById("gl-photo");
+  if (pf) pf.onchange = (ev) => {
+    photoFile = ev.target.files && ev.target.files[0] ? ev.target.files[0] : null;
+    if (photoPreviewUrl) { URL.revokeObjectURL(photoPreviewUrl); photoPreviewUrl = null; }
+    if (photoFile) photoPreviewUrl = URL.createObjectURL(photoFile);
+    render();
+  };
+  const pg = document.getElementById("gl-photo-go"); if (pg) pg.onclick = submitPhoto;
+  const sg = document.getElementById("gl-sighting-go"); if (sg) sg.onclick = submitSighting;
+
+  wrap.querySelectorAll(".gl-del").forEach(b => { b.onclick = () => removeEntry(b.getAttribute("data-id")); });
+  wrap.querySelectorAll(".gl-thumb").forEach(img => {
+    img.onclick = () => {
+      const id = img.getAttribute("data-id");
+      if (expandedThumbs.has(id)) expandedThumbs.delete(id); else expandedThumbs.add(id);
+      render();
+    };
+  });
+}
+
+/* ——— boot ——— */
+(async () => { await loadStore(); render(); })();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+}
+</script>
+</body>
+</html>
